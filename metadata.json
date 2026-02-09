@@ -1,0 +1,7 @@
+{
+  "name": "StyleSwap",
+  "description": "Professional AI-powered background replacement tool designed to transform product photos into high-converting lifestyle shots.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
