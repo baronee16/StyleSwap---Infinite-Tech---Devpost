@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { BACKDROP_PRESETS } from './constants';
+import { BACKDROP_PRESETS, SYSTEM_INSTRUCTION } from './constants';
 import { AppStatus, Preset } from './types';
 import { generateBackdrop } from './services/geminiService';
 
@@ -16,7 +16,6 @@ const App: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check for API key selection on mount for Gemini 3 compliance
   useEffect(() => {
     const checkKey = async () => {
       if (window.aistudio) {
@@ -30,7 +29,6 @@ const App: React.FC = () => {
   const handleSelectKey = async () => {
     if (window.aistudio) {
       await window.aistudio.openSelectKey();
-      // Assume success as per guidelines to avoid race condition
       setNeedsApiKey(false);
     }
   };
@@ -68,18 +66,18 @@ const App: React.FC = () => {
     setStatus(AppStatus.GENERATING);
     setError(null);
 
-    const prompt = customPrompt || selectedPreset.description;
+    const style = customPrompt || selectedPreset.description;
+    // Combine current style with the system instruction context more explicitly
+    const fullPrompt = `${style}. Ensure the lighting matches exactly and the product looks like a professional Etsy shop listing.`;
 
     try {
-      const result = await generateBackdrop(originalImage, originalMimeType, prompt);
+      const result = await generateBackdrop(originalImage, originalMimeType, fullPrompt);
       setResultImage(result);
       setStatus(AppStatus.SUCCESS);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Something went wrong.");
+      setError(err.message || "Failed to reimagine background.");
       setStatus(AppStatus.ERROR);
-      
-      // If the error suggests a missing project/key, prompt for re-selection
       if (err.message?.includes("API Key configuration")) {
         setNeedsApiKey(true);
       }
@@ -90,37 +88,35 @@ const App: React.FC = () => {
     if (!resultImage) return;
     const link = document.createElement('a');
     link.href = resultImage;
-    link.download = `styleswap-gemini3-${Date.now()}.png`;
+    link.download = `etsy-styled-${Date.now()}.png`;
     link.click();
   };
 
-  // Onboarding screen for API Key Selection
   if (needsApiKey) {
     return (
-      <div className="min-h-screen bg-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#fdfaf6] flex items-center justify-center p-4">
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl text-center border border-orange-100">
-          <div className="w-20 h-20 bg-orange-500 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-6 shadow-lg animate-bounce">
-            <i className="fas fa-key"></i>
+          <div className="w-20 h-20 bg-[#f1641e] rounded-full flex items-center justify-center text-white text-3xl mx-auto mb-6 shadow-lg">
+            <i className="fas fa-magic"></i>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">Unlock Gemini 3</h2>
+          <h2 className="text-2xl font-display font-bold text-gray-800 mb-3">Connect to Gemini 3</h2>
           <p className="text-gray-600 mb-8 leading-relaxed">
-            StyleSwap now uses the cutting-edge <strong>Gemini 3 Pro Image</strong> model. To proceed, please connect your Google Cloud project.
+            Ready to upgrade your shop? StyleSwap uses <strong>Gemini 3 Pro Image</strong> to generate studio-quality backgrounds.
           </p>
           <div className="space-y-4">
             <button 
               onClick={handleSelectKey}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-md active:scale-95 flex items-center justify-center gap-3"
+              className="w-full bg-[#f1641e] hover:bg-[#d8551a] text-white py-4 rounded-xl font-bold text-lg transition-all shadow-md active:scale-95"
             >
-              <i className="fas fa-plug"></i>
-              Connect API Key
+              Start Designing
             </button>
             <a 
               href="https://ai.google.dev/gemini-api/docs/billing" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="block text-sm text-orange-600 hover:underline font-medium"
+              className="block text-xs text-gray-400 hover:underline"
             >
-              Learn about paid project keys
+              Requires a paid Google Cloud project key
             </a>
           </div>
         </div>
@@ -130,61 +126,41 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Header */}
-      <header className="bg-white border-b border-orange-100 py-4 px-4 md:px-8 mb-8 sticky top-0 z-10 shadow-sm">
+      <header className="bg-white border-b border-orange-100 py-6 px-4 md:px-8 mb-8 sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white text-xl shadow-md">
-              <i className="fas fa-magic"></i>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#f1641e] rounded-2xl flex items-center justify-center text-white text-2xl shadow-md rotate-3">
+              <i className="fas fa-bag-shopping"></i>
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-800 leading-none">StyleSwap</h1>
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                <span className="text-[10px] text-orange-600 font-bold uppercase tracking-wider bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 shadow-sm">PRO EDIT</span>
-                <span className="flex items-center gap-1 text-[10px] text-blue-600 font-bold uppercase tracking-wider bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 shadow-sm">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
-                  Gemini 3 API Active
-                </span>
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 shadow-sm">US-EAST</span>
-              </div>
+              <h1 className="text-2xl md:text-3xl font-display font-bold text-gray-800 leading-none">StyleSwap</h1>
+              <p className="text-xs text-orange-600 font-medium tracking-wide mt-1 uppercase">Artisan Background Generator</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {originalImage && (
-              <button 
-                onClick={handleStartOver}
-                className="hidden md:flex items-center gap-2 text-gray-500 hover:text-orange-600 px-4 py-2 font-semibold transition-all"
-              >
-                <i className="fas fa-arrow-rotate-left text-sm"></i>
-                Start Over
-              </button>
-            )}
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="hidden md:flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-full font-semibold transition-all shadow-md active:scale-95"
+              className="bg-gray-800 hover:bg-black text-white px-6 py-2.5 rounded-full font-bold transition-all shadow-md active:scale-95 text-sm"
             >
-              <i className="fas fa-upload"></i>
-              {originalImage ? 'New Photo' : 'Upload Photo'}
+              Upload Photo
             </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 md:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Left Column: Editor Controls */}
-          <div className="lg:col-span-1 space-y-8">
-            <section className="bg-white p-6 rounded-2xl shadow-sm border border-orange-50">
-              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <i className="fas fa-sliders text-orange-500"></i>
-                AI Style Designer
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-1 space-y-6">
+            <section className="bg-white p-6 rounded-3xl shadow-sm border border-orange-50">
+              <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <i className="fas fa-palette text-etsy"></i>
+                Shop Aesthetics
               </h2>
               
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Atmosphere Presets</label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Choose a Setting</label>
+                  <div className="grid grid-cols-1 gap-3">
                     {BACKDROP_PRESETS.map((preset) => (
                       <button
                         key={preset.id}
@@ -192,48 +168,52 @@ const App: React.FC = () => {
                           setSelectedPreset(preset);
                           setCustomPrompt('');
                         }}
-                        className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 text-center ${
+                        className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-4 text-left ${
                           selectedPreset.id === preset.id && !customPrompt
-                          ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-sm' 
-                          : 'border-gray-100 hover:border-orange-200 text-gray-600'
+                          ? 'border-etsy bg-orange-50 text-[#d8551a]' 
+                          : 'border-gray-50 hover:border-orange-100 text-gray-600'
                         }`}
                       >
-                        <i className={`fas ${preset.icon} text-lg`}></i>
-                        <span className="text-xs font-medium">{preset.name}</span>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedPreset.id === preset.id ? 'bg-etsy text-white' : 'bg-gray-100 text-gray-400'}`}>
+                          <i className={`fas ${preset.icon}`}></i>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">{preset.name}</p>
+                          <p className="text-[10px] opacity-70 line-clamp-1">{preset.description}</p>
+                        </div>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Custom Setting</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Custom Vision</label>
                   <textarea
-                    placeholder="Describe your perfect background..."
-                    className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm h-24 transition-all"
+                    placeholder="E.g., A vintage trunk in a sunlit cabin..."
+                    className="w-full p-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-etsy focus:border-transparent outline-none text-sm h-28 transition-all bg-gray-50/50"
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
                   />
                 </div>
 
-                {/* Fix: Added correct enum comparison and completed truncated button logic */}
                 <button
                   onClick={handleGenerate}
                   disabled={!originalImage || status === AppStatus.GENERATING}
-                  className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                  className={`w-full py-5 rounded-2xl font-bold text-lg shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 ${
                     !originalImage || status === AppStatus.GENERATING
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-orange-600 hover:bg-orange-700 text-white'
+                      ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                      : 'bg-[#f1641e] hover:bg-[#d8551a] text-white'
                   }`}
                 >
                   {status === AppStatus.GENERATING ? (
                     <>
-                      <i className="fas fa-circle-notch fa-spin"></i>
-                      Reimagining...
+                      <i className="fas fa-spinner fa-spin"></i>
+                      Creating Magic...
                     </>
                   ) : (
                     <>
                       <i className="fas fa-wand-sparkles"></i>
-                      Generate Backdrop
+                      Reimagine Photo
                     </>
                   )}
                 </button>
@@ -241,115 +221,86 @@ const App: React.FC = () => {
             </section>
 
             {error && (
-              <div className="bg-red-50 border border-red-100 p-4 rounded-2xl text-red-600 text-sm flex gap-3">
-                <i className="fas fa-exclamation-circle mt-0.5"></i>
-                <p>{error}</p>
+              <div className="bg-red-50 border border-red-100 p-4 rounded-2xl text-red-600 text-sm animate-pulse">
+                <i className="fas fa-exclamation-triangle mr-2"></i>
+                {error}
               </div>
             )}
           </div>
 
-          {/* Right Column: Image Workspace */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-3xl shadow-sm border border-orange-50 overflow-hidden min-h-[500px] flex flex-col">
-              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                </div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {status === AppStatus.IDLE ? 'Waiting for upload' : 'Studio Canvas'}
-                </div>
-              </div>
-
-              <div className="flex-1 flex items-center justify-center p-6 bg-slate-50 relative">
+            <div className="bg-white rounded-[2rem] shadow-sm border border-orange-50 overflow-hidden min-h-[600px] flex flex-col">
+              <div className="flex-1 flex items-center justify-center p-8 bg-[#fdfaf6] relative">
                 {!originalImage ? (
                   <div 
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full max-w-md aspect-square border-4 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-orange-300 hover:bg-orange-50/50 transition-all group"
+                    className="w-full max-w-lg aspect-square border-2 border-dashed border-orange-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-6 cursor-pointer hover:bg-orange-50/50 transition-all group"
                   >
-                    <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 text-3xl group-hover:bg-orange-100 group-hover:text-orange-500 transition-all">
-                      <i className="fas fa-cloud-arrow-up"></i>
+                    <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-etsy text-4xl shadow-sm border border-orange-100 group-hover:scale-110 transition-transform">
+                      <i className="fas fa-camera"></i>
                     </div>
                     <div className="text-center">
-                      <p className="font-bold text-gray-700">Click to upload product photo</p>
-                      <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 10MB</p>
+                      <p className="font-display text-xl text-gray-800">Bring your product to life</p>
+                      <p className="text-sm text-gray-400 mt-2">Upload a photo to see the Etsy magic</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full h-full flex flex-col md:flex-row gap-6 items-center justify-center">
-                    <div className="flex-1 space-y-2 text-center">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase">Original</p>
-                      <div className="relative aspect-square bg-white rounded-2xl shadow-inner overflow-hidden border border-gray-100">
-                        <img src={originalImage} alt="Original" className="w-full h-full object-contain p-4" />
+                  <div className="w-full h-full flex flex-col gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-end">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Your Photo</p>
+                          <button onClick={handleStartOver} className="text-[10px] font-bold text-etsy uppercase">Change</button>
+                        </div>
+                        <div className="aspect-square bg-white rounded-3xl shadow-inner border border-gray-100 overflow-hidden flex items-center justify-center p-8">
+                          <img src={originalImage} alt="Original" className="max-w-full max-h-full object-contain" />
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="hidden md:flex flex-col items-center gap-2">
-                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                        <i className="fas fa-chevron-right"></i>
+
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Reimagined Result</p>
+                        <div className="aspect-square bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden relative">
+                          {status === AppStatus.GENERATING ? (
+                            <div className="absolute inset-0 bg-white/90 backdrop-blur-md flex flex-col items-center justify-center text-center p-8">
+                              <div className="w-12 h-12 border-4 border-etsy/20 border-t-etsy rounded-full animate-spin mb-4"></div>
+                              <p className="font-display text-lg text-gray-800 mb-2">Generating Boutique Backdrop</p>
+                              <p className="text-xs text-gray-400">Gemini 3 is crafting the perfect natural lighting for your shop...</p>
+                            </div>
+                          ) : resultImage ? (
+                            <img src={resultImage} alt="Result" className="w-full h-full object-cover animate-in fade-in duration-1000" />
+                          ) : (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-200">
+                              <i className="fas fa-magic text-6xl mb-4"></i>
+                              <p className="text-sm font-medium">Click generate to begin</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex-1 space-y-2 text-center">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase">Result</p>
-                      <div className="relative aspect-square bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200 group">
-                        {status === AppStatus.GENERATING ? (
-                          <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
-                            <div className="relative w-16 h-16 mb-4">
-                              <div className="absolute inset-0 border-4 border-orange-100 rounded-full"></div>
-                              <div className="absolute inset-0 border-4 border-t-orange-500 rounded-full animate-spin"></div>
-                            </div>
-                            <h3 className="font-bold text-gray-800 text-sm">Processing with Gemini 3</h3>
-                            <p className="text-[10px] text-gray-500 mt-2 max-w-[180px]">Generating 1K High-Quality Studio Environment...</p>
+                    {resultImage && status === AppStatus.SUCCESS && (
+                      <div className="bg-white p-6 rounded-3xl border border-orange-100 shadow-lg flex items-center justify-between animate-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
+                            <i className="fas fa-check"></i>
                           </div>
-                        ) : resultImage ? (
-                          <>
-                            <img src={resultImage} alt="Result" className="w-full h-full object-cover" />
-                            <div className="absolute bottom-4 right-4 flex gap-2 translate-y-12 group-hover:translate-y-0 transition-all">
-                              <button 
-                                onClick={downloadImage}
-                                className="bg-white/90 backdrop-blur text-gray-800 p-2.5 rounded-lg shadow-lg hover:bg-orange-500 hover:text-white transition-all"
-                              >
-                                <i className="fas fa-download"></i>
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 text-gray-300">
-                            <i className="fas fa-image text-4xl mb-2"></i>
-                            <p className="text-xs font-medium">Ready to transform</p>
+                          <div>
+                            <p className="font-bold text-gray-800 text-sm">Perfect composition!</p>
+                            <p className="text-xs text-gray-400">High-resolution 1K image ready for upload.</p>
                           </div>
-                        )}
+                        </div>
+                        <button 
+                          onClick={downloadImage}
+                          className="bg-gray-800 hover:bg-black text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all"
+                        >
+                          <i className="fas fa-download"></i>
+                          Save Image
+                        </button>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
-
-              {resultImage && (
-                <div className="p-4 bg-orange-50 border-t border-orange-100 flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 text-orange-700">
-                    <i className="fas fa-check-circle"></i>
-                    <span className="text-sm font-semibold">Perfect! Image ready for your shop.</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={handleStartOver}
-                      className="px-4 py-2 text-sm font-bold text-orange-700 hover:bg-orange-100 rounded-lg transition-all"
-                    >
-                      Reset
-                    </button>
-                    <button 
-                      onClick={downloadImage}
-                      className="px-6 py-2 bg-orange-600 text-white text-sm font-bold rounded-lg shadow-md hover:bg-orange-700 transition-all active:scale-95 flex items-center gap-2"
-                    >
-                      <i className="fas fa-download"></i>
-                      Download 1K PNG
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -362,39 +313,8 @@ const App: React.FC = () => {
         accept="image/*" 
         className="hidden" 
       />
-
-      {/* Footer / Mobile Nav */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 p-3 md:hidden z-20">
-        <div className="flex items-center justify-around max-w-md mx-auto">
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center gap-1 text-gray-400 hover:text-orange-500"
-          >
-            <i className="fas fa-plus-circle text-xl"></i>
-            <span className="text-[10px] font-bold">UPLOAD</span>
-          </button>
-          <button 
-            onClick={handleGenerate}
-            disabled={!originalImage || status === AppStatus.GENERATING}
-            className={`flex flex-col items-center gap-1 ${
-              !originalImage || status === AppStatus.GENERATING ? 'text-gray-200' : 'text-orange-600'
-            }`}
-          >
-            <i className="fas fa-wand-magic-sparkles text-xl"></i>
-            <span className="text-[10px] font-bold">GENERATE</span>
-          </button>
-          <button 
-            onClick={handleStartOver}
-            className="flex flex-col items-center gap-1 text-gray-400 hover:text-orange-500"
-          >
-            <i className="fas fa-arrow-rotate-left text-xl"></i>
-            <span className="text-[10px] font-bold">RESET</span>
-          </button>
-        </div>
-      </footer>
     </div>
   );
 };
 
-// Fix: Added missing default export
 export default App;

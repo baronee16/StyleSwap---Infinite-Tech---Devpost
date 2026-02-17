@@ -3,39 +3,39 @@ import { Preset } from './types';
 
 export const BACKDROP_PRESETS: Preset[] = [
   {
-    id: 'rustic_kitchen',
-    name: 'Rustic Kitchen',
-    description: 'A warm, wooden kitchen counter with soft natural morning light.',
-    icon: 'fa-utensils'
+    id: 'boho_artisan',
+    name: 'Boho Artisan',
+    description: 'A warm, textured setting with macrame, dried pampas grass, and soft golden-hour light on a reclaimed wood surface.',
+    icon: 'fa-sun'
   },
   {
-    id: 'boho_studio',
-    name: 'Boho Studio',
-    description: 'Minimalist white studio background with dried pampas grass and soft shadows.',
+    id: 'modern_farmhouse',
+    name: 'Modern Farmhouse',
+    description: 'A clean, rustic white-washed wooden table with a sprig of lavender and linen napkins in soft morning light.',
+    icon: 'fa-home'
+  },
+  {
+    id: 'botanical_studio',
+    name: 'Botanical Studio',
+    description: 'A minimalist scene with terracotta pots, monstera leaves, and organic shadows on a lime-wash plaster wall.',
     icon: 'fa-leaf'
   },
   {
-    id: 'natural_wood',
-    name: 'Natural Wood',
-    description: 'Close-up of a weathered oak table with blurred greenery in the background.',
-    icon: 'fa-tree'
-  },
-  {
-    id: 'minimalist_shelf',
-    name: 'Minimalist Shelf',
-    description: 'A clean floating shelf against a cream-colored wall with aesthetic decor.',
-    icon: 'fa-layer-group'
+    id: 'scandi_minimalist',
+    name: 'Scandi Minimalist',
+    description: 'Light oak wood flooring, a simple ceramic vase, and airy, high-key lighting for a clean, modern boutique look.',
+    icon: 'fa-cube'
   }
 ];
 
 export const SYSTEM_INSTRUCTION = `
-You are a world-class commercial product photographer and AI image editor.
-Your task is to take a provided product image and replace its background with a high-quality, "Etsy-style" lifestyle setting.
+You are a specialized commercial photographer for top-tier Etsy shops. 
+Your goal is to transform basic product photos into high-end, "Artisan-style" lifestyle shots.
 
-Key rules:
-1. Preserve the product's identity, shape, colors, and textures perfectly.
-2. The lighting on the product must realistically match the new environment.
-3. Use shallow depth of field (bokeh) to make the product pop.
-4. Ensure the style is professional, inviting, and consistent with top-performing Etsy handmade products.
-5. If the user provides a specific style description, prioritize it.
+Aesthetic Guidelines:
+1. Etsy Vibes: Use warm, organic textures (linen, wood, stone, ceramic).
+2. Lighting: Prioritize "soft-box" natural light or "golden hour" warmth. Avoid harsh artificial shadows.
+3. Composition: Use shallow depth of field (bokeh) to isolate the product while keeping the background recognizable as a cozy, high-end home or studio.
+4. Product Integrity: DO NOT alter the product itself. Keep its size, shape, color, and labels identical. 
+5. Integration: Place the product realistically on the surface (add contact shadows and reflections where appropriate).
 `;
